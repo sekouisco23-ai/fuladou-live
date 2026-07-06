@@ -11,7 +11,7 @@ CORS(app)
 
 BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
 EMAIL_ARTISTE = os.environ.get("EMAIL_ARTISTE")
-BASE_URL      = os.environ.get("BASE_URL")
+BASE_URL      = "https://fuladou-live.onrender.com"
 LOVABLE_URL   = os.environ.get("LOVABLE_URL")
 
 def envoyer_email(destinataire_email, destinataire_nom, sujet, contenu_html):
