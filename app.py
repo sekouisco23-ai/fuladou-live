@@ -10,10 +10,10 @@ CORS(app)
 # ===========================================================================
 # CONFIGURATION
 # ===========================================================================
-BASE_URL          = "https://fuladou-live.onrender.com"
-BREVO_API_KEY     = os.environ.get("BREVO_API_KEY")
-EMAIL_ARTISTE     = os.environ.get("EMAIL_ARTISTE", "kingdou2004@gmail.com")
-LOVABLE_URL       = os.environ.get("LOVABLE_URL", "https://fuladou-live-booking.lovable.app")
+BASE_URL      = "https://fuladou-live.onrender.com"
+BREVO_API_KEY = os.environ.get("BREVO_API_KEY")
+EMAIL_ARTISTE = os.environ.get("EMAIL_ARTISTE", "kingdou2004@gmail.com")
+LOVABLE_URL   = os.environ.get("LOVABLE_URL", "https://fuladou-live-booking.lovable.app")
 
 # ===========================================================================
 # FONCTION UNIVERSELLE D'ENVOI EMAIL VIA BREVO
@@ -38,7 +38,7 @@ def envoyer_email(destinataire_email, destinataire_nom, sujet, contenu_html):
     return response.status_code == 201
 
 # ===========================================================================
-# ROUTE 1 : Appelée par Dify — Notifie l'artiste avec boutons
+# ROUTE 1 : Notifie l'artiste avec boutons
 # ===========================================================================
 @app.route('/notifier-artiste', methods=['POST'])
 def notifier_artiste():
@@ -50,6 +50,7 @@ def notifier_artiste():
     date_ev        = data.get('date_evenement', '')
     lieu_ev        = data.get('lieu', '')
     type_ev        = data.get('type_evenement', '')
+    message_client = data.get('message', '')
 
     # Liens avec toutes les infos dans l'URL
     params = (
@@ -59,9 +60,19 @@ def notifier_artiste():
         f"&date={quote(date_ev)}"
         f"&lieu={quote(lieu_ev)}"
         f"&type={quote(type_ev)}"
+        f"&message={quote(message_client)}"
     )
     url_confirmer = f"{BASE_URL}/confirmer/{id_reservation}{params}"
     url_refuser   = f"{BASE_URL}/refuser/{id_reservation}{params}"
+
+    # Ligne message optionnelle dans le tableau
+    ligne_message = ""
+    if message_client:
+        ligne_message = f"""
+        <tr>
+            <td style="padding:10px;color:#666;">💬 Message</td>
+            <td style="padding:10px;font-weight:bold;">{message_client}</td>
+        </tr>"""
 
     contenu_html = f"""
     <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;
@@ -106,7 +117,8 @@ def notifier_artiste():
                     <td style="padding:10px;color:#666;">🎉 Type</td>
                     <td style="padding:10px;font-weight:bold;">{type_ev}</td>
                 </tr>
-                <tr>
+                {ligne_message}
+                <tr style="background:#F0EBF8;">
                     <td style="padding:10px;color:#666;">🔖 Référence</td>
                     <td style="padding:10px;font-weight:bold;">#{id_reservation}</td>
                 </tr>
@@ -155,14 +167,23 @@ def notifier_artiste():
 # ===========================================================================
 @app.route('/confirmer/<id_reservation>', methods=['GET'])
 def confirmer_reservation(id_reservation):
-    nom_client   = request.args.get('nom', 'Client')
-    email_client = request.args.get('email', '')
-    telephone    = request.args.get('tel', '')
-    date_ev      = request.args.get('date', '')
-    lieu_ev      = request.args.get('lieu', '')
-    type_ev      = request.args.get('type', '')
+    nom_client     = request.args.get('nom', 'Client')
+    email_client   = request.args.get('email', '')
+    telephone      = request.args.get('tel', '')
+    date_ev        = request.args.get('date', '')
+    lieu_ev        = request.args.get('lieu', '')
+    type_ev        = request.args.get('type', '')
+    message_client = request.args.get('message', '')
 
-    # Email au client
+    # Ligne message optionnelle
+    ligne_message = ""
+    if message_client:
+        ligne_message = f"""
+        <tr style="background:#F0EBF8;">
+            <td style="padding:10px;color:#666;">💬 Votre message</td>
+            <td style="padding:10px;font-weight:bold;">{message_client}</td>
+        </tr>"""
+
     if email_client:
         contenu_html = f"""
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;
@@ -197,6 +218,7 @@ def confirmer_reservation(id_reservation):
                         <td style="padding:10px;color:#666;">🔖 Référence</td>
                         <td style="padding:10px;font-weight:bold;">#{id_reservation}</td>
                     </tr>
+                    {ligne_message}
                 </table>
 
                 <p style="color:#888;">
@@ -218,7 +240,6 @@ def confirmer_reservation(id_reservation):
             contenu_html
         )
 
-    # Page HTML pour King Dou
     return f"""
     <!DOCTYPE html>
     <html lang="fr">
@@ -234,7 +255,7 @@ def confirmer_reservation(id_reservation):
                    max-width:450px;width:90%;text-align:center;
                    border:2px solid #D4A017;
                    box-shadow:0 4px 20px rgba(0,0,0,0.1);}}
-            .header {{background:#3B1F6A;color:#D4A017;padding:20px;
+            .header {{background:#3B1F6A;padding:20px;
                      border-radius:12px;margin-bottom:24px;}}
         </style>
     </head>
@@ -270,13 +291,22 @@ def confirmer_reservation(id_reservation):
 # ===========================================================================
 @app.route('/refuser/<id_reservation>', methods=['GET'])
 def refuser_reservation(id_reservation):
-    nom_client   = request.args.get('nom', 'Client')
-    email_client = request.args.get('email', '')
-    date_ev      = request.args.get('date', '')
-    lieu_ev      = request.args.get('lieu', '')
-    type_ev      = request.args.get('type', '')
+    nom_client     = request.args.get('nom', 'Client')
+    email_client   = request.args.get('email', '')
+    date_ev        = request.args.get('date', '')
+    lieu_ev        = request.args.get('lieu', '')
+    type_ev        = request.args.get('type', '')
+    message_client = request.args.get('message', '')
 
-    # Email au client
+    # Ligne message optionnelle
+    ligne_message = ""
+    if message_client:
+        ligne_message = f"""
+        <tr style="background:#F0EBF8;">
+            <td style="padding:10px;color:#666;">💬 Votre message</td>
+            <td style="padding:10px;font-weight:bold;">{message_client}</td>
+        </tr>"""
+
     if email_client:
         contenu_html = f"""
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;
@@ -311,6 +341,7 @@ def refuser_reservation(id_reservation):
                         <td style="padding:10px;color:#666;">🔖 Référence</td>
                         <td style="padding:10px;font-weight:bold;">#{id_reservation}</td>
                     </tr>
+                    {ligne_message}
                 </table>
 
                 <p style="color:#888;">
@@ -337,7 +368,6 @@ def refuser_reservation(id_reservation):
             contenu_html
         )
 
-    # Page HTML pour King Dou
     return f"""
     <!DOCTYPE html>
     <html lang="fr">
@@ -353,7 +383,7 @@ def refuser_reservation(id_reservation):
                    max-width:450px;width:90%;text-align:center;
                    border:2px solid #DC2626;
                    box-shadow:0 4px 20px rgba(0,0,0,0.1);}}
-            .header {{background:#3B1F6A;color:#D4A017;padding:20px;
+            .header {{background:#3B1F6A;padding:20px;
                      border-radius:12px;margin-bottom:24px;}}
         </style>
     </head>
