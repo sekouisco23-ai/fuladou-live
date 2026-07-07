@@ -4,7 +4,7 @@
 
 Fuladou Live est une plateforme numérique conçue pour simplifier et moderniser la réservation d'artistes pour tous types d'événements (mariages, baptêmes, concerts, cérémonies, événements culturels, etc.).
 
-Le projet automatise l'ensemble du processus de réservation, depuis la demande du client jusqu'à la génération d'une affiche personnalisée après validation de la réservation.
+Le projet automatise l'ensemble du processus de réservation, depuis la demande du client jusqu'à la confirmation et validation de la réservation.
 
 L'objectif est d'offrir une solution simple, rapide et professionnelle aux artistes tout en améliorant l'expérience des organisateurs d'événements.
 
