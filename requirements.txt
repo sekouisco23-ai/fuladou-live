@@ -4,3 +4,4 @@ requests
 pillow
 twilio
 gunicorn
+sib-api-v3-sdk
