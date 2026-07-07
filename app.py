@@ -16,6 +16,11 @@ EMAIL_ARTISTE = os.environ.get("EMAIL_ARTISTE", "kingdou2004@gmail.com")
 LOVABLE_URL   = os.environ.get("LOVABLE_URL", "https://fuladou-live-booking.lovable.app")
 
 # ===========================================================================
+# MÉMOIRE DES RÉSERVATIONS TRAITÉES
+# ===========================================================================
+reservations_traitees = {}
+
+# ===========================================================================
 # FONCTION UNIVERSELLE D'ENVOI EMAIL VIA BREVO
 # ===========================================================================
 def envoyer_email(destinataire_email, destinataire_nom, sujet, contenu_html):
@@ -38,6 +43,55 @@ def envoyer_email(destinataire_email, destinataire_nom, sujet, contenu_html):
     return response.status_code == 201
 
 # ===========================================================================
+# PAGE DÉJÀ TRAITÉE
+# ===========================================================================
+def page_deja_traitee(id_reservation, statut):
+    return f"""
+    <!DOCTYPE html>
+    <html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Déjà traitée - Fuladou Live</title>
+        <style>
+            body {{font-family:Arial,sans-serif;background:#F8F5FF;
+                  display:flex;justify-content:center;align-items:center;
+                  min-height:100vh;margin:0;}}
+            .card {{background:white;border-radius:16px;padding:40px;
+                   max-width:450px;width:90%;text-align:center;
+                   border:2px solid #888;
+                   box-shadow:0 4px 20px rgba(0,0,0,0.1);}}
+            .header {{background:#3B1F6A;padding:20px;
+                     border-radius:12px;margin-bottom:24px;}}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="header">
+                <h1 style="color:#D4A017;margin:0;">🎵 Fuladou Live</h1>
+            </div>
+            <div style="font-size:70px;margin:16px 0;">⚠️</div>
+            <h2 style="color:#888;">Déjà traitée</h2>
+            <p style="color:#555;">
+                Cette réservation a déjà été
+                <strong>{statut}</strong>.
+            </p>
+            <p style="color:#555;">
+                Aucune action supplémentaire n'est nécessaire.
+            </p>
+            <p style="background:#F8F5FF;padding:12px;border-radius:8px;
+               color:#3B1F6A;font-weight:bold;">
+               Référence : #{id_reservation}
+            </p>
+            <p style="color:#D4A017;font-weight:bold;margin-top:24px;">
+                Fuladou Live · Kolda, Sénégal
+            </p>
+        </div>
+    </body>
+    </html>
+    """
+
+# ===========================================================================
 # ROUTE 1 : Notifie l'artiste avec boutons
 # ===========================================================================
 @app.route('/notifier-artiste', methods=['POST'])
@@ -52,6 +106,9 @@ def notifier_artiste():
     type_ev        = data.get('type_evenement', '')
     message_client = data.get('message', '')
 
+    # Enregistrer la réservation comme en attente
+    reservations_traitees[id_reservation] = None
+
     # Liens avec toutes les infos dans l'URL
     params = (
         f"?nom={quote(nom_client)}"
@@ -65,7 +122,6 @@ def notifier_artiste():
     url_confirmer = f"{BASE_URL}/confirmer/{id_reservation}{params}"
     url_refuser   = f"{BASE_URL}/refuser/{id_reservation}{params}"
 
-    # Ligne message optionnelle dans le tableau
     ligne_message = ""
     if message_client:
         ligne_message = f"""
@@ -167,6 +223,17 @@ def notifier_artiste():
 # ===========================================================================
 @app.route('/confirmer/<id_reservation>', methods=['GET'])
 def confirmer_reservation(id_reservation):
+
+    # Vérifier si déjà traitée
+    if reservations_traitees.get(id_reservation) is not None:
+        return page_deja_traitee(
+            id_reservation,
+            reservations_traitees[id_reservation]
+        ), 200
+
+    # Marquer comme confirmée
+    reservations_traitees[id_reservation] = "confirmée"
+
     nom_client     = request.args.get('nom', 'Client')
     email_client   = request.args.get('email', '')
     telephone      = request.args.get('tel', '')
@@ -175,7 +242,6 @@ def confirmer_reservation(id_reservation):
     type_ev        = request.args.get('type', '')
     message_client = request.args.get('message', '')
 
-    # Ligne message optionnelle
     ligne_message = ""
     if message_client:
         ligne_message = f"""
@@ -188,18 +254,15 @@ def confirmer_reservation(id_reservation):
         contenu_html = f"""
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;
         border:2px solid #D4A017;border-radius:12px;overflow:hidden;">
-
             <div style="background:#3B1F6A;padding:24px;text-align:center;">
                 <h1 style="color:#D4A017;margin:0;">🎵 Fuladou Live</h1>
                 <p style="color:white;">Réservation confirmée</p>
             </div>
-
             <div style="padding:28px;background:#F8F5FF;text-align:center;">
                 <div style="font-size:60px;margin:16px 0;">✅</div>
                 <h2 style="color:#3B1F6A;">Bonjour {nom_client},</h2>
                 <p>Bonne nouvelle ! Votre réservation a été
                 <strong>confirmée</strong> par King Dou.</p>
-
                 <table style="width:100%;border-collapse:collapse;
                 margin:20px 0;text-align:left;">
                     <tr>
@@ -220,17 +283,13 @@ def confirmer_reservation(id_reservation):
                     </tr>
                     {ligne_message}
                 </table>
-
                 <p style="color:#888;">
                     King Dou vous contactera au <strong>{telephone}</strong>
                     pour finaliser les détails et le paiement.
                 </p>
             </div>
-
             <div style="background:#3B1F6A;padding:16px;text-align:center;">
-                <p style="color:#D4A017;margin:0;">
-                    Fuladou Live · Kolda, Sénégal · 2025
-                </p>
+                <p style="color:#D4A017;margin:0;">Fuladou Live · Kolda, Sénégal · 2025</p>
             </div>
         </div>
         """
@@ -291,6 +350,17 @@ def confirmer_reservation(id_reservation):
 # ===========================================================================
 @app.route('/refuser/<id_reservation>', methods=['GET'])
 def refuser_reservation(id_reservation):
+
+    # Vérifier si déjà traitée
+    if reservations_traitees.get(id_reservation) is not None:
+        return page_deja_traitee(
+            id_reservation,
+            reservations_traitees[id_reservation]
+        ), 200
+
+    # Marquer comme refusée
+    reservations_traitees[id_reservation] = "refusée"
+
     nom_client     = request.args.get('nom', 'Client')
     email_client   = request.args.get('email', '')
     date_ev        = request.args.get('date', '')
@@ -298,7 +368,6 @@ def refuser_reservation(id_reservation):
     type_ev        = request.args.get('type', '')
     message_client = request.args.get('message', '')
 
-    # Ligne message optionnelle
     ligne_message = ""
     if message_client:
         ligne_message = f"""
@@ -311,18 +380,15 @@ def refuser_reservation(id_reservation):
         contenu_html = f"""
         <div style="font-family:Arial,sans-serif;max-width:600px;margin:auto;
         border:2px solid #DC2626;border-radius:12px;overflow:hidden;">
-
             <div style="background:#3B1F6A;padding:24px;text-align:center;">
                 <h1 style="color:#D4A017;margin:0;">🎵 Fuladou Live</h1>
                 <p style="color:white;">Mise à jour de votre réservation</p>
             </div>
-
             <div style="padding:28px;background:#F8F5FF;text-align:center;">
                 <div style="font-size:60px;margin:16px 0;">❌</div>
                 <h2 style="color:#DC2626;">Bonjour {nom_client},</h2>
                 <p>Nous sommes désolés, King Dou est
                 <strong>INDISPONIBLE</strong> pour le {date_ev}.</p>
-
                 <table style="width:100%;border-collapse:collapse;
                 margin:20px 0;text-align:left;">
                     <tr>
@@ -343,7 +409,6 @@ def refuser_reservation(id_reservation):
                     </tr>
                     {ligne_message}
                 </table>
-
                 <p style="color:#888;">
                     Vous pouvez faire une nouvelle réservation pour une autre date.
                 </p>
@@ -354,11 +419,8 @@ def refuser_reservation(id_reservation):
                    Faire une nouvelle réservation
                 </a>
             </div>
-
             <div style="background:#3B1F6A;padding:16px;text-align:center;">
-                <p style="color:#D4A017;margin:0;">
-                    Fuladou Live · Kolda, Sénégal · 2025
-                </p>
+                <p style="color:#D4A017;margin:0;">Fuladou Live · Kolda, Sénégal · 2025</p>
             </div>
         </div>
         """
@@ -415,7 +477,7 @@ def refuser_reservation(id_reservation):
 
 
 # ===========================================================================
-# ROUTE SANTE
+# ROUTE SANTÉ
 # ===========================================================================
 @app.route('/', methods=['GET'])
 def home():
