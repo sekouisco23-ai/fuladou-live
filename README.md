@@ -15,9 +15,8 @@ L'objectif est d'offrir une solution simple, rapide et professionnelle aux artis
 - Création de réservations en ligne
 - Vérification automatique des disponibilités
 - Gestion des statuts (En attente, Confirmée, Refusée)
-- Refus automatique des demandes en conflit sur une même date
-- Génération automatique d'affiches promotionnelles
-- Interface utilisateur moderne développée avec Lovable
+- Refus automatique des demandes en conflit sur une meme date
+- Interface utilisateur moderne
 - API Backend développée avec Flask
 - Stockage des réservations
 - Notification automatique de l'artiste
@@ -57,7 +56,7 @@ Le fonctionnement de la plateforme est entièrement automatisé :
 5. Une notification est envoyée à l'artiste.
 6. Après validation, la réservation passe au statut **Confirmée**.
 7. Les éventuelles réservations concurrentes sur la même date sont automatiquement refusées.
-8. Une affiche personnalisée est générée automatiquement.
+8. Une notification de confirmation est envoyé au client par mail apres la validation de L'equipe de l'artiste.
 
 # 🎯 Impact
 
